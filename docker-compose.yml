@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  php:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: oprs_php
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: peer_review
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: base64:${APP_KEY:-}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - oprs_network
+
+  vue:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: oprs_vue
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - oprs_network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: oprs_postgres
+    environment:
+      POSTGRES_DB: peer_review
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - oprs_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: oprs_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - oprs_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: oprs_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - oprs_network
+
+volumes:
+  postgres_data:
+
+networks:
+  oprs_network:
+    driver: bridge

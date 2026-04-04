@@ -1,0 +1,21 @@
+{
+  "name": "oprs/open-peer-review-system",
+  "description": "Open Peer Review System - ORE aligned",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "laravel/framework": "^11.0",
+    "laravel/sanctum": "^4.0",
+    "laravel/tinker": "^2.8",
+    "spatie/laravel-permission": "^6.0",
+    "spatie/laravel-event-sourcing": "^7.0",
+    "aws/aws-sdk-php": "^3.283"
+  },
+  "require-dev": {
+    "laravel/pint": "^1.13",
+    "laravel/sail": "^1.26",
+    "phpstan/phpstan": "^1.10",
+    "pestphp/pest": "^2.28",
+    "pestphp/pest-plugin-laravel": "^2.28"
+  }
+}
