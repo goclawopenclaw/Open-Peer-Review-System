@@ -15,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->statefulApi();
+        // Use stateless API approach for Sanctum tokens
+        // $middleware->statefulApi();
         // Mock API is disabled - using real controllers
         // $middleware->append(\App\Http\Middleware\MockApiResponses::class);
     })
