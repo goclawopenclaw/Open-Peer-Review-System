@@ -15,6 +15,9 @@
           <router-link v-if="isAuthenticated" to="/dashboard" class="hover:bg-blue-700 px-3 py-2 rounded">
             Dashboard
           </router-link>
+          <router-link v-if="isAuthenticated" to="/reviewer-dashboard" class="hover:bg-blue-700 px-3 py-2 rounded">
+            Reviews
+          </router-link>
           <router-link v-if="isAuthenticated" to="/submit" class="hover:bg-blue-700 px-3 py-2 rounded">
             Submit
           </router-link>

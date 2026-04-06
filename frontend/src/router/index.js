@@ -26,6 +26,16 @@ const routes = [
     name: 'Dashboard',
     component: () => import('../views/DashboardView.vue'),
   },
+  {
+    path: '/reviewer-dashboard',
+    name: 'ReviewerDashboard',
+    component: () => import('../views/ReviewerDashboardView.vue'),
+  },
+  {
+    path: '/review/:id',
+    name: 'ReviewForm',
+    component: () => import('../views/ReviewFormView.vue'),
+  },
 ]
 
 const router = createRouter({
