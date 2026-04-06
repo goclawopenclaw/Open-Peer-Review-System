@@ -46,6 +46,16 @@ const routes = [
     name: 'ArticleDetail',
     component: () => import('../views/ArticleDetailView.vue'),
   },
+  {
+    path: '/editor-dashboard',
+    name: 'EditorDashboard',
+    component: () => import('../views/EditorDashboardView.vue'),
+  },
+  {
+    path: '/editorial-decision/:id',
+    name: 'EditorialDecision',
+    component: () => import('../views/EditorialDecisionView.vue'),
+  },
 ]
 
 const router = createRouter({

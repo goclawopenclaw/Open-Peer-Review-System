@@ -21,6 +21,9 @@
           <router-link v-if="isAuthenticated" to="/reviewer-dashboard" class="hover:bg-blue-700 px-3 py-2 rounded">
             Reviews
           </router-link>
+          <router-link v-if="isEditor" to="/editor-dashboard" class="hover:bg-blue-700 px-3 py-2 rounded bg-blue-800">
+            Editor
+          </router-link>
           <router-link v-if="isAuthenticated" to="/submit" class="hover:bg-blue-700 px-3 py-2 rounded">
             Submit
           </router-link>
@@ -45,6 +48,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
+const isEditor = computed(() => authStore.isAuthenticated && authStore.user?.is_editor)
 
 const logout = () => {
   authStore.logout()
