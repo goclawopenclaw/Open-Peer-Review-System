@@ -22,6 +22,11 @@ const routes = [
     component: () => import('../views/SubmitView.vue'),
   },
   {
+    path: '/submissions/:id',
+    name: 'SubmissionDetail',
+    component: () => import('../views/SubmissionDetailView.vue'),
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('../views/DashboardView.vue'),

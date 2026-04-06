@@ -193,7 +193,8 @@ const handleSubmit = async () => {
     const submission = await submissionStore.createSubmission(payload)
     router.push(`/submissions/${submission.id}`)
   } catch (err) {
-    error.value = err.response?.data?.message || 'Failed to submit article'
+    console.error('Submission error:', err)
+    error.value = err.response?.data?.message || err.message || 'Failed to submit article'
   } finally {
     submitting.value = false
   }

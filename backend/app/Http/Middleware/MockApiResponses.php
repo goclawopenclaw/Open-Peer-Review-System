@@ -56,17 +56,53 @@ class MockApiResponses
             ], 200);
         }
 
-        // Mock submissions endpoints
+        // Mock submissions endpoints - GET single submission
+        if (preg_match('/api\/submissions\/(.+)$/', $request->path()) && $request->isMethod('get')) {
+            preg_match('/api\/submissions\/(.+)$/', $request->path(), $matches);
+            return response()->json([
+                'submission' => [
+                    'id' => $matches[1],
+                    'title' => 'Sample Article Title',
+                    'abstract' => 'This is a sample article abstract for testing purposes.',
+                    'keywords' => ['keyword1', 'keyword2', 'keyword3'],
+                    'research_field' => 'Computer Science',
+                    'funding_source' => 'National Science Foundation',
+                    'competing_interests' => 'None',
+                    'data_availability' => 'Data available upon request',
+                    'status' => 'submitted',
+                    'created_at' => now(),
+                ]
+            ], 200);
+        }
+
+        // Mock submissions endpoints - POST create
         if ($request->path() === 'api/submissions' && $request->isMethod('post')) {
             return response()->json([
+                'success' => true,
                 'submission' => [
                     'id' => 'uuid-sub-' . uniqid(),
                     'title' => $request->input('title'),
                     'abstract' => $request->input('abstract'),
+                    'keywords' => $request->input('keywords', []),
+                    'research_field' => $request->input('research_field'),
                     'status' => 'draft',
                     'created_at' => now(),
                 ]
             ], 201);
+        }
+
+        // Mock submit endpoint (POST /submissions/{id}/submit)
+        if (preg_match('/api\/submissions\/(.+)\/submit/', $request->path()) && $request->isMethod('post')) {
+            return response()->json([
+                'success' => true,
+                'submission' => [
+                    'id' => 'uuid-sub-' . uniqid(),
+                    'title' => $request->input('title'),
+                    'abstract' => $request->input('abstract'),
+                    'status' => 'submitted',
+                    'created_at' => now(),
+                ]
+            ], 200);
         }
 
         if ($request->path() === 'api/public/articles' && $request->isMethod('get')) {
