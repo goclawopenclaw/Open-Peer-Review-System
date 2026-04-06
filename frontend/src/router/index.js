@@ -7,6 +7,21 @@ const routes = [
     component: () => import('../views/HomeView.vue'),
   },
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/LoginView.vue'),
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('../views/RegisterView.vue'),
+  },
+  {
+    path: '/submit',
+    name: 'Submit',
+    component: () => import('../views/SubmitView.vue'),
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('../views/DashboardView.vue'),
