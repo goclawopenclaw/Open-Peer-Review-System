@@ -14,8 +14,8 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'affiliation' => 'nullable|string',
+            'password' => 'required|string|min:8',
+            'affiliation' => 'nullable|string|max:255',
         ]);
 
         $user = User::create([
@@ -23,14 +23,22 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'affiliation' => $validated['affiliation'] ?? null,
+            'is_active' => true,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'User registered successfully',
-            'user' => $user,
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'affiliation' => $user->affiliation,
+                'is_editor' => $user->is_editor,
+            ],
             'token' => $token,
+            'message' => 'User registered successfully',
         ], 201);
     }
 
@@ -50,33 +58,57 @@ class AuthController extends Controller
         }
 
         $user->update(['last_login_at' => now()]);
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Login successful',
-            'user' => $user,
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'affiliation' => $user->affiliation,
+                'is_editor' => $user->is_editor,
+                'is_admin' => $user->is_admin,
+            ],
             'token' => $token,
-        ]);
+            'message' => 'Login successful',
+        ], 200);
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully',
+        ], 200);
     }
 
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+                'email' => $request->user()->email,
+                'affiliation' => $request->user()->affiliation,
+                'is_editor' => $request->user()->is_editor,
+                'is_admin' => $request->user()->is_admin,
+                'expertise_areas' => $request->user()->expertise_areas,
+            ],
+        ], 200);
     }
 
     public function refresh(Request $request)
     {
-        $request->user()->tokens()->delete();
         $token = $request->user()->createToken('auth_token')->plainTextToken;
 
-        return response()->json(['token' => $token]);
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'message' => 'Token refreshed',
+        ], 200);
     }
 }

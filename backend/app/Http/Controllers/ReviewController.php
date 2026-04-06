@@ -4,25 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Models\Review;
 use App\Models\ReviewAssignment;
-use App\Models\InlineComment;
 use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
     public function pendingAssignments(Request $request)
     {
-        $assignments = ReviewAssignment::where('reviewer_id', $request->user()->id)
-            ->where('status', '!=', 'submitted')
-            ->with('submission')
-            ->paginate(20);
+        $assignments = $request->user()
+            ->reviewerAssignments()
+            ->with('submission.author', 'assignedByEditor')
+            ->where('status', 'pending')
+            ->paginate(10);
 
-        return response()->json($assignments);
+        return response()->json([
+            'success' => true,
+            'data' => $assignments->items(),
+            'pagination' => [
+                'total' => $assignments->total(),
+                'per_page' => $assignments->perPage(),
+                'current_page' => $assignments->currentPage(),
+            ],
+        ], 200);
     }
 
     public function acceptAssignment(Request $request, ReviewAssignment $assignment)
     {
         if ($assignment->reviewer_id !== $request->user()->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 403);
         }
 
         $assignment->update([
@@ -31,53 +42,56 @@ class ReviewController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Review assignment accepted',
+            'success' => true,
             'assignment' => $assignment,
-        ]);
+            'message' => 'Review assignment accepted',
+        ], 200);
     }
 
     public function declineAssignment(Request $request, ReviewAssignment $assignment)
     {
         if ($assignment->reviewer_id !== $request->user()->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 403);
         }
 
-        $validated = $request->validate([
-            'reason' => 'nullable|string',
-            'alternative_reviewer_name' => 'nullable|string',
-        ]);
+        $reason = $request->input('reason');
 
         $assignment->update([
             'status' => 'declined',
             'declined_at' => now(),
-            'decline_reason' => $validated['reason'] ?? null,
-            'alternative_reviewer_name' => $validated['alternative_reviewer_name'] ?? null,
+            'decline_reason' => $reason,
         ]);
 
         return response()->json([
-            'message' => 'Review assignment declined',
+            'success' => true,
             'assignment' => $assignment,
-        ]);
+            'message' => 'Review assignment declined',
+        ], 200);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'assignment_id' => 'required|uuid|exists:review_assignments,id',
-            'summary' => 'required|string|min:100',
+            'summary' => 'required|string',
             'strengths' => 'required|string',
             'weaknesses' => 'required|string',
             'detailed_comments' => 'required|string',
             'recommendation' => 'required|in:accept,minor_revisions,major_revisions,reject',
             'confidence' => 'required|in:high,medium,low',
             'is_signed' => 'boolean',
-            'inline_comments' => 'array',
         ]);
 
-        $assignment = ReviewAssignment::find($validated['assignment_id']);
+        $assignment = ReviewAssignment::findOrFail($validated['assignment_id']);
 
         if ($assignment->reviewer_id !== $request->user()->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 403);
         }
 
         $review = Review::create([
@@ -91,46 +105,48 @@ class ReviewController extends Controller
             'recommendation' => $validated['recommendation'],
             'confidence' => $validated['confidence'],
             'is_signed' => $validated['is_signed'] ?? true,
+            'is_public' => true,
             'submitted_at' => now(),
         ]);
-
-        // Save inline comments
-        if (isset($validated['inline_comments'])) {
-            foreach ($validated['inline_comments'] as $comment) {
-                InlineComment::create([
-                    'review_id' => $review->id,
-                    'submission_id' => $assignment->submission_id,
-                    'reviewer_id' => $request->user()->id,
-                    'paragraph_number' => $comment['paragraph_number'] ?? null,
-                    'text_excerpt' => $comment['text_excerpt'] ?? null,
-                    'comment_text' => $comment['comment_text'],
-                    'is_public' => $comment['is_public'] ?? true,
-                ]);
-            }
-        }
 
         $assignment->update(['status' => 'submitted']);
 
         return response()->json([
-            'message' => 'Review submitted',
+            'success' => true,
             'review' => $review,
+            'message' => 'Review submitted successfully',
         ], 201);
     }
 
-    public function show(Review $review)
+    public function show(Request $request, Review $review)
     {
         return response()->json([
-            'review' => $review->load('reviewer', 'inlineComments'),
-        ]);
+            'success' => true,
+            'review' => [
+                'id' => $review->id,
+                'summary' => $review->summary,
+                'strengths' => $review->strengths,
+                'weaknesses' => $review->weaknesses,
+                'detailed_comments' => $review->detailed_comments,
+                'recommendation' => $review->recommendation,
+                'confidence' => $review->confidence,
+                'is_signed' => $review->is_signed,
+                'reviewer' => $review->is_signed ? $review->reviewer : null,
+                'submitted_at' => $review->submitted_at,
+            ],
+        ], 200);
     }
 
-    public function submissionReviews($submissionId)
+    public function submissionReviews(Request $request, $submissionId)
     {
         $reviews = Review::where('submission_id', $submissionId)
+            ->with('reviewer')
             ->where('is_public', true)
-            ->with('reviewer', 'inlineComments')
             ->get();
 
-        return response()->json(['reviews' => $reviews]);
+        return response()->json([
+            'success' => true,
+            'reviews' => $reviews,
+        ], 200);
     }
 }

@@ -10,18 +10,17 @@ class SubmissionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Submission::with('author');
+        $submissions = $request->user()->submissions()->with('author')->paginate(10);
 
-        if ($request->user()->is_editor || $request->user()->is_admin) {
-            // Editors see all submissions
-        } else {
-            // Authors see only their own
-            $query->where('author_id', $request->user()->id);
-        }
-
-        $submissions = $query->paginate(20);
-
-        return response()->json($submissions);
+        return response()->json([
+            'success' => true,
+            'data' => $submissions->items(),
+            'pagination' => [
+                'total' => $submissions->total(),
+                'per_page' => $submissions->perPage(),
+                'current_page' => $submissions->currentPage(),
+            ],
+        ], 200);
     }
 
     public function store(Request $request)
@@ -29,16 +28,15 @@ class SubmissionController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:500',
             'abstract' => 'required|string|max:5000',
-            'keywords' => 'array|max:10',
-            'research_field' => 'nullable|string',
-            'funding_source' => 'nullable|string',
+            'keywords' => 'nullable|array',
+            'research_field' => 'nullable|string|max:255',
+            'funding_source' => 'nullable|string|max:255',
             'competing_interests' => 'nullable|string',
             'data_availability' => 'nullable|string',
-            'reviewer_suggestions' => 'array|max:5',
+            'reviewer_suggestions' => 'nullable|array',
         ]);
 
-        $submission = Submission::create([
-            'author_id' => $request->user()->id,
+        $submission = $request->user()->submissions()->create([
             'title' => $validated['title'],
             'abstract' => $validated['abstract'],
             'keywords' => $validated['keywords'] ?? [],
@@ -49,22 +47,29 @@ class SubmissionController extends Controller
             'status' => 'draft',
         ]);
 
-        // Save reviewer suggestions
-        if (isset($validated['reviewer_suggestions'])) {
-            foreach ($validated['reviewer_suggestions'] as $suggestion) {
+        // Add reviewer suggestions
+        if (!empty($validated['reviewer_suggestions'])) {
+            foreach ($validated['reviewer_suggestions'] as $reviewer) {
                 ReviewerSuggestion::create([
                     'submission_id' => $submission->id,
-                    'reviewer_name' => $suggestion['name'],
-                    'reviewer_email' => $suggestion['email'],
-                    'institution' => $suggestion['institution'] ?? null,
-                    'rationale' => $suggestion['rationale'] ?? null,
+                    'reviewer_name' => $reviewer['name'],
+                    'reviewer_email' => $reviewer['email'],
+                    'institution' => $reviewer['institution'] ?? null,
+                    'rationale' => $reviewer['rationale'] ?? null,
                 ]);
             }
         }
 
         return response()->json([
-            'message' => 'Submission created',
-            'submission' => $submission,
+            'success' => true,
+            'submission' => [
+                'id' => $submission->id,
+                'title' => $submission->title,
+                'abstract' => $submission->abstract,
+                'status' => $submission->status,
+                'created_at' => $submission->created_at,
+            ],
+            'message' => 'Submission created successfully',
         ], 201);
     }
 
@@ -73,8 +78,23 @@ class SubmissionController extends Controller
         $this->authorize('view', $submission);
 
         return response()->json([
-            'submission' => $submission->load('author', 'reviews', 'editorialDecision'),
-        ]);
+            'success' => true,
+            'submission' => [
+                'id' => $submission->id,
+                'title' => $submission->title,
+                'abstract' => $submission->abstract,
+                'keywords' => $submission->keywords,
+                'research_field' => $submission->research_field,
+                'funding_source' => $submission->funding_source,
+                'competing_interests' => $submission->competing_interests,
+                'data_availability' => $submission->data_availability,
+                'status' => $submission->status,
+                'version' => $submission->version,
+                'doi' => $submission->doi,
+                'created_at' => $submission->created_at,
+                'updated_at' => $submission->updated_at,
+            ],
+        ], 200);
     }
 
     public function update(Request $request, Submission $submission)
@@ -82,18 +102,22 @@ class SubmissionController extends Controller
         $this->authorize('update', $submission);
 
         $validated = $request->validate([
-            'title' => 'string|max:500',
-            'abstract' => 'string|max:5000',
-            'keywords' => 'array',
-            'research_field' => 'nullable|string',
+            'title' => 'sometimes|string|max:500',
+            'abstract' => 'sometimes|string|max:5000',
+            'keywords' => 'sometimes|array',
+            'research_field' => 'sometimes|string|max:255',
+            'funding_source' => 'sometimes|string|max:255',
+            'competing_interests' => 'sometimes|string',
+            'data_availability' => 'sometimes|string',
         ]);
 
         $submission->update($validated);
 
         return response()->json([
-            'message' => 'Submission updated',
+            'success' => true,
             'submission' => $submission,
-        ]);
+            'message' => 'Submission updated successfully',
+        ], 200);
     }
 
     public function submit(Request $request, Submission $submission)
@@ -101,7 +125,10 @@ class SubmissionController extends Controller
         $this->authorize('update', $submission);
 
         if ($submission->status !== 'draft') {
-            return response()->json(['error' => 'Only draft submissions can be submitted'], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Only draft submissions can be submitted',
+            ], 422);
         }
 
         $submission->update([
@@ -110,9 +137,10 @@ class SubmissionController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Submission submitted for review',
+            'success' => true,
             'submission' => $submission,
-        ]);
+            'message' => 'Submission submitted successfully',
+        ], 200);
     }
 
     public function destroy(Request $request, Submission $submission)
@@ -121,6 +149,9 @@ class SubmissionController extends Controller
 
         $submission->delete();
 
-        return response()->json(['message' => 'Submission deleted'], 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Submission deleted successfully',
+        ], 200);
     }
 }

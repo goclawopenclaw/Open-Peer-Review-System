@@ -5,10 +5,15 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\PublicController;
 
 // Public routes
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+
+// Public article endpoints
+Route::get('/public/articles', [PublicController::class, 'articles']);
+Route::get('/public/articles/{id}', [PublicController::class, 'article']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -19,7 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Submissions
     Route::apiResource('submissions', SubmissionController::class);
-    Route::post('submissions/{submission}/submit', [SubmissionController::class, 'submit']);
+    Route::post('/submissions/{submission}/submit', [SubmissionController::class, 'submit']);
 
     // Reviews
     Route::get('/reviews/pending', [ReviewController::class, 'pendingAssignments']);
