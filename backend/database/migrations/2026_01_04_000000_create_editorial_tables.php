@@ -62,7 +62,7 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->timestamps();
             
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('setNull');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             $table->index('action');
         });
     }

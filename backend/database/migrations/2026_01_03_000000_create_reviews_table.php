@@ -14,7 +14,7 @@ return new class extends Migration
             $table->uuid('reviewer_id')->nullable();
             $table->uuid('assigned_by_editor_id');
             $table->foreign('submission_id')->references('id')->on('submissions')->onDelete('cascade');
-            $table->foreign('reviewer_id')->references('id')->on('users')->onDelete('setNull');
+            $table->foreign('reviewer_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('assigned_by_editor_id')->references('id')->on('users')->onDelete('restrict');
             $table->timestamp('deadline_at');
             $table->enum('status', ['pending', 'accepted', 'declined', 'submitted', 'overdue'])->default('pending');
