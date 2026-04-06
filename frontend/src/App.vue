@@ -6,6 +6,9 @@
           Open Peer Review System
         </router-link>
         <div class="space-x-4">
+          <router-link to="/articles" class="hover:bg-blue-700 px-3 py-2 rounded">
+            Articles
+          </router-link>
           <router-link v-if="!isAuthenticated" to="/login" class="hover:bg-blue-700 px-3 py-2 rounded">
             Login
           </router-link>

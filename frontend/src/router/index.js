@@ -36,6 +36,16 @@ const routes = [
     name: 'ReviewForm',
     component: () => import('../views/ReviewFormView.vue'),
   },
+  {
+    path: '/articles',
+    name: 'PublishedArticles',
+    component: () => import('../views/PublishedArticlesView.vue'),
+  },
+  {
+    path: '/article/:id',
+    name: 'ArticleDetail',
+    component: () => import('../views/ArticleDetailView.vue'),
+  },
 ]
 
 const router = createRouter({
